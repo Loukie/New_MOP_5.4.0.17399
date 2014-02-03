@@ -23,46 +23,72 @@ void WorldSession::SendAuthResponse(uint8 code, bool queued, uint32 queuePos)
 {
     QueryResult classresult = LoginDatabase.PQuery("SELECT class, expansion FROM realm_classes WHERE realmId = %u", realmID);
     QueryResult raceresult = LoginDatabase.PQuery("SELECT race, expansion FROM realm_races WHERE realmId = %u", realmID);
-    if (!classresult || !raceresult)
+    
+	if (!classresult || !raceresult)
     {
         sLog->outError(LOG_FILTER_GENERAL, "AuthHandler SendAuthResponse could not get db realm_classes and realm_races");
         return;
     }
-    WorldPacket packet(SMSG_AUTH_RESPONSE, 1 /*bits*/ + 4 + 1 + 4 + 1 + 4 + 1 + 1 + (queued ? 4 : 0));
-    packet.WriteBit(1);                                    // has account info
-
-    // account info
-    packet.WriteBits(classresult->GetRowCount(), 25);           // Activation count for classes
-    packet.WriteBit(0);
-    packet.WriteBit(0);
-    packet.WriteBits(0, 22);                                // Activate character template windows/button
-    packet.WriteBits(raceresult->GetRowCount(), 25);            // Activation count for races
-    packet.WriteBit(queued);                                     // IsInQueue
-    packet.FlushBits();
-
-    do
-    {
-        Field* fields = raceresult->Fetch();
-
-        packet << fields[1].GetUInt8();
-        packet << fields[0].GetUInt8();
-    } while (raceresult->NextRow());
-
-    packet << uint32(0);
-    packet << uint32(0);
-    packet << uint8(0);
-    packet << uint8(Expansion());                          // Unknown, these two show the same
-    packet << uint8(Expansion());                          // Unknown, these two show the same
-
-    do
-    {
-        Field* fields = classresult->Fetch();
-
-        packet << fields[0].GetUInt8();
-        packet << fields[1].GetUInt8();
-    } while (classresult->NextRow());
+   
+	WorldPacket packet(SMSG_AUTH_RESPONSE, 80);
     
-    packet << uint32(0);
+	packet.WriteBit(queued);
+    packet.WriteBit(code == AUTH_OK);                          // has account info
+
+    if (code == AUTH_OK)
+    {
+		// account info
+        packet.WriteBits(0, 21);
+        packet.WriteBit(0);         // Unknown
+        packet.WriteBits(classresult->GetRowCount(), 23);
+        packet.WriteBit(0);         // Unknown
+        packet.WriteBit(0);         // Unknown
+        packet.WriteBits(0, 21);    // Unknown
+        packet.WriteBit(0);         // Unknown
+        packet.WriteBits(raceresult->GetRowCount(), 23);
+
+        packet.FlushBits();
+    }
+
+    if (queued)
+    {
+        packet.WriteBit(0);
+        packet << uint32(queuePos);                             // Queue position
+
+        packet.FlushBits();
+    }
+
+    if (code == AUTH_OK)
+    {
+        do
+        {
+            Field* fields = classresult->Fetch();
+
+            packet << fields[0].GetUInt8();
+            packet << fields[1].GetUInt8();
+        } while (classresult->NextRow());        
+
+        packet << uint32(0);
+
+        do
+        {
+            Field* fields = raceresult->Fetch();
+
+            packet << fields[1].GetUInt8();
+            packet << fields[0].GetUInt8();
+        } while (raceresult->NextRow());
+
+
+        packet << uint32(0);                                   // BillingTimeRemaining
+        packet << uint32(0);                                   // BillingTimeRested
+
+        packet << uint8(Expansion());                          // 0 - normal, 1 - TBC, 2 - WOTLK, 3 - CATA; must be set in database manually for each account
+        packet << uint8(Expansion());                          // Unknown, these two show the same
+
+        packet << uint32(0);
+        packet << uint32(0);
+    }
+
     packet << uint8(code);
 
     SendPacket(&packet);
