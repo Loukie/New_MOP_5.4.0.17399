@@ -3,7 +3,9 @@
 // MSDN Magazine, 2002
 // FILE: WheatyExceptionReport.CPP
 //==========================================
-#if PLATFORM == PLATFORM_WINDOWS
+#include "CompilerDefs.h"
+
+#if PLATFORM == PLATFORM_WINDOWS && !defined(__MINGW32__)
 #define WIN32_LEAN_AND_MEAN
 #pragma warning(disable:4996)
 #pragma warning(disable:4312)
@@ -348,13 +350,12 @@ void WheatyExceptionReport::PrintSystemInfo()
 //===========================================================================
 void WheatyExceptionReport::printTracesForAllThreads()
 {
-  HANDLE hThreadSnap = INVALID_HANDLE_VALUE;
   THREADENTRY32 te32;
 
   DWORD dwOwnerPID = GetCurrentProcessId();
   m_hProcess = GetCurrentProcess();
   // Take a snapshot of all running threads
-  hThreadSnap = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
+  HANDLE hThreadSnap = CreateToolhelp32Snapshot(TH32CS_SNAPTHREAD, 0);
   if (hThreadSnap == INVALID_HANDLE_VALUE)
     return;
 
