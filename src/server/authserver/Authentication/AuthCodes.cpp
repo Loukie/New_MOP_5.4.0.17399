@@ -22,8 +22,10 @@ namespace AuthHelper
 {
     static RealmBuildInfo const PostBcAcceptedClientBuilds[] =
     {
-        {16357, 5, 1, 0, 'а'},
-        {16309, 5, 1, 0, ' '},
+        {17399, 5, 4, 0, ' '},
+        {17371, 5, 4, 0, ' '},
+        {17359, 5, 4, 0, ' '},
+        {17128, 5, 3, 0, ' '},
         {15595, 4, 3, 4, ' '},
         {14545, 4, 2, 2, ' '},
         {13623, 4, 0, 6, 'a'},
@@ -39,6 +41,7 @@ namespace AuthHelper
 
     static RealmBuildInfo const PreBcAcceptedClientBuilds[] =
     {
+        {6141,  1, 12, 3, ' '},
         {6005,  1, 12, 2, ' '},
         {5875,  1, 12, 1, ' '},
         {0,     0, 0, 0, ' '}                                   // terminator
