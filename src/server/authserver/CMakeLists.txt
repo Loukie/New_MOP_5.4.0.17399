@@ -15,7 +15,7 @@ file(GLOB_RECURSE sources_realms Realms/*.cpp Realms/*.h)
 file(GLOB_RECURSE sources_server Server/*.cpp Server/*.h)
 file(GLOB sources_localdir *.cpp *.h)
 
-if (USE_PCH)
+if (USE_COREPCH)
   set(authserver_PCH_HDR PrecompiledHeaders/authPCH.h)
   set(authserver_PCH_SRC PrecompiledHeaders/authPCH.cpp)
 endif()
@@ -29,16 +29,11 @@ set(authserver_SRCS
 )
 
 if( WIN32 )
-  set(authserver_SRCS
+set(authserver_SRCS
     ${authserver_SRCS}
-    ${sources_windows_Debugging}
-  )
-  if ( MSVC )
-    set(authserver_SRCS
-      ${authserver_SRCS}
-      authserver.rc
-    )
-  endif ()
+    ${sources_Debugging}
+    authserver.rc
+)
 endif()
 
 include_directories(
@@ -56,8 +51,8 @@ include_directories(
   ${CMAKE_CURRENT_SOURCE_DIR}/Authentication
   ${CMAKE_CURRENT_SOURCE_DIR}/Realms
   ${CMAKE_CURRENT_SOURCE_DIR}/Server
-  ${ACE_INCLUDE_DIRS}
-  ${MYSQL_INCLUDE_DIRS}
+  ${ACE_INCLUDE_DIR}
+  ${MYSQL_INCLUDE_DIR}
   ${OPENSSL_INCLUDE_DIR}
 )
 
@@ -75,36 +70,29 @@ if( NOT WIN32 )
 endif()
 
 target_link_libraries(authserver
-  tcshared
-  ${MYSQL_LIBRARIES}
+  shared
+  ${MYSQL_LIBRARY}
   ${OPENSSL_LIBRARIES}
   ${CMAKE_THREAD_LIBS_INIT}
-  ${ACE_LIBRARIES}
+  ${ACE_LIBRARY}
 )
 
 if( WIN32 )
-  if ( MSVC )
-    add_custom_command(TARGET authserver
-      POST_BUILD
-      COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/authserver.conf.dist ${CMAKE_BINARY_DIR}/bin/$(ConfigurationName)/
-    )
-  elseif ( MINGW )
-    add_custom_command(TARGET authserver
-      POST_BUILD
-      COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/authserver.conf.dist ${CMAKE_BINARY_DIR}/bin/
-    )
-  endif()
+  add_custom_command(TARGET authserver
+    POST_BUILD
+    COMMAND ${CMAKE_COMMAND} -E copy ${CMAKE_CURRENT_SOURCE_DIR}/authserver.conf.dist ${CMAKE_BINARY_DIR}/bin/$(ConfigurationName)/
+  )
 endif()
 
 if( UNIX )
   install(TARGETS authserver DESTINATION bin)
-  install(FILES  authserver.conf.dist DESTINATION ${CONF_DIR})
+  install(FILES  authserver.conf.dist DESTINATION etc)
 elseif( WIN32 )
   install(TARGETS authserver DESTINATION "${CMAKE_INSTALL_PREFIX}")
   install(FILES authserver.conf.dist DESTINATION "${CMAKE_INSTALL_PREFIX}")
 endif()
 
 # Generate precompiled header
-if (USE_PCH)
+if (USE_COREPCH)
   add_cxx_pch(authserver ${authserver_PCH_HDR} ${authserver_PCH_SRC})
 endif()
